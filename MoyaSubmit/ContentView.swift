@@ -13,6 +13,7 @@ struct ContentView: View {
     var body: some View {
         
         ZStack {
+       
             switch self.movieVM.state {
             case .idle, .loading :
                 Text("")

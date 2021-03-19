@@ -7,27 +7,37 @@
 
 import Foundation
 import Moya
+import RxSwift
 
 protocol MovieRemoteDataSourceProtocol {
-    func catchMoviesList(completion: @escaping ((Swift.Result<MovieModel, Error>) -> Void))
+    func catchMoviesList() -> Single<MovieModel>
 }
-class MovieRemoteDataSource: MovieRemoteDataSourceProtocol  {
-    let provider = MoyaProvider<MovieService>( plugins: [VerbosePlugin(verbose: true)])
 
-    func catchMoviesList(completion: @escaping ((Swift.Result<MovieModel, Error>) -> Void)) {
-     
-        provider.request(.popular) { result in
-            switch result{
-            case .success(let response) :
-                do {
-                    let posts = try JSON().newJSONDecoder().decode(MovieModel.self, from: response.data)
-                    completion(.success(posts))
-                } catch (let error) {
-                    completion(.failure(error))
+enum error : Swift.Error  {
+    case error
+}
+
+class MovieRemoteDataSource: MovieRemoteDataSourceProtocol  {
+    
+    let provider = MoyaProvider<MovieService>( )
+    func catchMoviesList() -> Single<MovieModel> {
+        return Single.create { single -> Disposable in
+            return self.provider.rx.request(.popular)
+                .subscribe { response in
+                    if response.statusCode == 200 {
+                        do {
+                            let dataresult = try JSONDecoder().decode(MovieModel.self, from: response.data)
+                            return single(.success(dataresult))
+                        }catch{
+                            return single(.error(error))
+                        }
+                    }else{
+                        return single(.error(error.error))
+                    }
+                } onError: { (error) in
+                    return single(.error(error))
                 }
-            case .failure(let error) :
-                completion(.failure(error))
-            }
         }
     }
 }
+

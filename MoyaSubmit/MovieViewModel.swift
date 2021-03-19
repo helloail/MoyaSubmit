@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import RxSwift
 
 class MovieViewModel: ObservableObject {
     
@@ -14,37 +15,22 @@ class MovieViewModel: ObservableObject {
     @Published var movielist = [Result]()
     @Published var url = ""
     @Published var page = 1
+    let disposebag = DisposeBag()
     
      init(movieservice: MovieRemoteDataSourceProtocol = MovieRemoteDataSource() ) {
         
         self.movieservice = movieservice
-    }
-    
-    func fetchArticleExecute() {
-        
-        self.movieservice.catchMoviesList() { [weak self] result in
-            
-            switch result {
-            
-            case .success(let result) :
-           
-                DispatchQueue.main.async {
-                    guard let data = result.results else {
-                        return
-                    }
-                    self?.movielist = data
-                    
-                    if self?.movielist.count == 0 {
-                        self?.state = .empty
-                    } else {
-                        self?.state = .loaded
-                    }
-                }
-            case .failure(let error):
-                
-                self?.state = .error(error)
-                
-            }
-        }
+     }
+    func fetchArticleExecute(){
+        self.state = .loading
+        self.movieservice.catchMoviesList()
+            .subscribeOn(MainScheduler.instance)
+            .subscribe { Movie in
+                self.movielist = Movie.results ?? []
+                self.state = .loaded
+            } onError: { error in
+                self.state = .error(error)
+                self.state = .loaded
+            }.disposed(by: disposebag)
     }
 }

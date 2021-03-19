@@ -7,7 +7,10 @@ target 'MoyaSubmit' do
   
 
   # Pods for MoyaSubmit
-  pod 'Moya', '~> 14.0'
+  pod 'Moya/RxSwift', '~> 14.0'
+  pod 'RxSwift', '5.0.0'
+  pod 'RxCocoa', '5.0.0'
+
 
   target 'MoyaSubmitTests' do
     inherit! :search_paths
